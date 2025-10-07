@@ -20,24 +20,23 @@ public class BeeFlightController : MonoBehaviour
     private Rigidbody rb;
     private Vector3 currentVelocity;
     private Vector3 targetVelocity;
+    private Quaternion initialModelRotation;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
         rb.freezeRotation = true;
-    }
 
-    void Update()
-    {
-
+        // Remember the model’s starting rotation so we can tilt relative to it
+        if (beeModel != null)
+            initialModelRotation = beeModel.localRotation;
     }
 
     void FixedUpdate()
     {
         HandleInput();
         MovePlayer();
-
     }
 
     private void LateUpdate()
@@ -47,25 +46,26 @@ public class BeeFlightController : MonoBehaviour
 
     void HandleInput()
     {
-        // --- Rotation (Yaw) with A/D ---
+        // --- Rotation (Yaw) with A/D --- (rotating around world up)
         float turnInput = 0f;
         if (Input.GetKey(KeyCode.A)) turnInput = -1f;
         if (Input.GetKey(KeyCode.D)) turnInput = 1f;
-
         transform.Rotate(Vector3.up * turnInput * turnSpeed * Time.deltaTime);
 
-        // --- Forward/Backward with W/S (kept inverted to match your orientation) ---
+        // --- Forward/Backward with W/S ---
         float forwardInput = 0f;
-        if (Input.GetKey(KeyCode.W)) forwardInput = -1f;
-        if (Input.GetKey(KeyCode.S)) forwardInput = 1f;
+        if (Input.GetKey(KeyCode.W)) forwardInput = 1f;
+        if (Input.GetKey(KeyCode.S)) forwardInput = -1f;
 
-        // --- Vertical: Space = up, Shift = down (either Shift key) ---
+        // --- Vertical with Space / Shift ---
         float verticalInput = 0f;
         if (Input.GetKey(KeyCode.Space)) verticalInput = 1f;
         if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) verticalInput = -1f;
 
-        // Target velocity in local space (forward/back + up/down only)
-        Vector3 inputDir = new Vector3(0f, verticalInput, forwardInput).normalized;
+        // Your local forward is +X, up is +Y, and left is +Z.
+        // Flipped the sign on X so W moves forward instead of sideways.
+        Vector3 inputDir = new Vector3(0, verticalInput, -forwardInput).normalized;
+
         targetVelocity = transform.TransformDirection(inputDir) * moveSpeed;
     }
 
@@ -78,28 +78,27 @@ public class BeeFlightController : MonoBehaviour
             (targetVelocity.magnitude > currentVelocity.magnitude ? acceleration : deceleration) * Time.fixedDeltaTime
         );
 
-        // Apply to Rigidbody (use rb.velocity)
-        rb.linearVelocity  = currentVelocity;
+        rb.linearVelocity = currentVelocity;
     }
 
     void HandleTilt()
     {
         if (beeModel == null) return;
 
-        // Get local velocity relative to Player
+        // Get local velocity relative to the bee
         Vector3 localVel = transform.InverseTransformDirection(currentVelocity);
 
-        // ---- FIXED: Forward tilt sign corrected ----
-        // Use localVel.z directly (no extra negative) so forward/back tilt matches movement
-        float tiltX = Mathf.Clamp(localVel.z * forwardTilt / Mathf.Max(0.0001f, moveSpeed), -forwardTilt, forwardTilt);
+        // --- Forward/back tilt around Z axis ---
+        // (Positive X = forward movement in your setup)
+        float tiltZ = Mathf.Clamp(localVel.x * forwardTilt / Mathf.Max(0.0001f, moveSpeed), -forwardTilt, forwardTilt);
 
-        // Bank tilt from turning (based on A/D input, not strafing)
+        // --- Left/right tilt around X axis ---
         float turnInput = 0f;
         if (Input.GetKey(KeyCode.A)) turnInput = -1f;
         if (Input.GetKey(KeyCode.D)) turnInput = 1f;
-        float tiltZ = turnInput * turnTilt;
+        float tiltX = turnInput * turnTilt;
 
-        Quaternion targetRot = Quaternion.Euler(tiltX, 0f, tiltZ);
+        Quaternion targetRot = initialModelRotation * Quaternion.Euler(tiltX, 0f, -tiltZ);
         beeModel.localRotation = Quaternion.Slerp(beeModel.localRotation, targetRot, Time.deltaTime * tiltSmooth);
     }
 }
