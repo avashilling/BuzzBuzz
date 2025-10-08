@@ -56,7 +56,6 @@ public class BeeFlightController : MonoBehaviour
         float forwardInput = 0f;
         if (Input.GetKey(KeyCode.W)) forwardInput = 1f;
         if (Input.GetKey(KeyCode.S)) forwardInput = -1f;
-
         // --- Vertical with Space / Shift ---
         float verticalInput = 0f;
         if (Input.GetKey(KeyCode.Space)) verticalInput = 1f;

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [ExecuteAlways]
 public class LightingManager : MonoBehaviour
@@ -36,7 +37,7 @@ public class LightingManager : MonoBehaviour
                 else
                 {
                     TimeOfDay = maxTime;
-                    finished = true;
+                    SceneManager.LoadScene("End");
                 }
             }
         }
