@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class HiveTrigger : MonoBehaviour
 {
@@ -6,6 +7,7 @@ public class HiveTrigger : MonoBehaviour
     public GameObject nectarPrefab; // assign your nectar prefab
     public Transform dropPoint;     // assign the point it spawns from
     public float dropForce = 5f;    // optional force to give falling effect
+    public float dropDelay = 0.1f;  // time between each nectar drop
 
     private void OnTriggerEnter(Collider other)
     {
@@ -15,15 +17,18 @@ public class HiveTrigger : MonoBehaviour
             int deposited = bee.DropOffNectar();
             if (deposited > 0)
             {
-                // optional: play hive sound, particle, UI update, etc.
                 Debug.Log($"Hive accepted {deposited} nectar.");
-
-                // Spawn nectar drop prefab for each nectar collected
-                for (int i = 0; i < deposited; i++)
-                {
-                    SpawnNectarDrop();
-                }
+                StartCoroutine(SpawnNectarDropsSequentially(deposited));
             }
+        }
+    }
+
+    private IEnumerator SpawnNectarDropsSequentially(int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            SpawnNectarDrop();
+            yield return new WaitForSeconds(dropDelay);
         }
     }
 
