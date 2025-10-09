@@ -8,9 +8,18 @@ public class LightingManager : MonoBehaviour
     [SerializeField] private LightingPreset Preset;
 
     [Header("Cycle Settings")]
-    [SerializeField] public float TimeOfDay = 0f; // 0 = dawn
-    public float maxTime = 180f; // total duration in seconds
-    public bool loop = false;    // whether to loop or stop after sunset
+    [Tooltip("Current time of day (0 = dawn)")]
+    public float TimeOfDay = 0f;
+
+    [Tooltip("Total duration of a full day in seconds")]
+    public float maxTime = 180f;
+
+    [Tooltip("Loop the day cycle or stop at sunset")]
+    public bool loop = false;
+
+    [Header("Optional Settings")]
+    [Tooltip("Freeze time progression, but allow manual adjustment of TimeOfDay")]
+    public bool freezeTime = false; // default false
 
     private bool finished = false;
 
@@ -27,21 +36,26 @@ public class LightingManager : MonoBehaviour
 
         if (Application.isPlaying)
         {
-            TimeOfDay += Time.deltaTime;
-
-            // If we're done, stop or loop
-            if (TimeOfDay >= maxTime)
+            // Only advance time automatically if freezeTime is false
+            if (!freezeTime)
             {
-                if (loop)
-                    TimeOfDay = 0f;
-                else
+                TimeOfDay += Time.deltaTime;
+
+                if (TimeOfDay >= maxTime)
                 {
-                    TimeOfDay = maxTime;
-                    SceneManager.LoadScene("End");
+                    if (loop)
+                        TimeOfDay = 0f;
+                    else
+                    {
+                        TimeOfDay = maxTime;
+                        SceneManager.LoadScene("End");
+                    }
                 }
             }
         }
 
+        // Clamp time and update lighting
+        TimeOfDay = Mathf.Clamp(TimeOfDay, 0f, maxTime);
         float timePercent = Mathf.Clamp01(TimeOfDay / maxTime);
         UpdateLighting(timePercent);
     }
@@ -56,8 +70,6 @@ public class LightingManager : MonoBehaviour
         if (DirectionalLight != null)
         {
             DirectionalLight.color = Preset.DirectionalColor.Evaluate(timePercent);
-
-
             float sunAngle = Mathf.Lerp(-10f, 190f, timePercent);
             DirectionalLight.transform.localRotation = Quaternion.Euler(new Vector3(sunAngle, -170f, 0f));
         }

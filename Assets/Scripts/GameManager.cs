@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -8,6 +9,9 @@ public class GameManager : MonoBehaviour
     [Header("Global Game Data")]
     public int flowersPollinated = 0;
     public int totalNectar = 0;
+
+    [Header("UI")]
+    public TMP_Text nectarText; // Optional: assign in inspector
 
     private AudioSource audioSource;
 
@@ -51,6 +55,10 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Flowers pollinated: {flowersPollinated}");
     }
 
+    /// <summary>
+    /// Adds nectar to the total and updates TMP text if assigned
+    /// </summary>
+    /// <param name="amount">Amount of nectar to add</param>
     public void AddNectarToTotal(int amount)
     {
         totalNectar += amount;
@@ -61,12 +69,25 @@ public class GameManager : MonoBehaviour
         {
             audioSource.Play();
         }
+
+        // Update TMP text if assigned
+        if (nectarText != null)
+        {
+            nectarText.text = totalNectar.ToString();
+        }
     }
 
     public void ResetGame()
     {
         flowersPollinated = 0;
         totalNectar = 0;
+
+        // Update TMP text if assigned
+        if (nectarText != null)
+        {
+            nectarText.text = "0";
+        }
+
         Debug.Log("Game stats reset for BuzzWorld.");
     }
 }
